@@ -107,7 +107,7 @@ grunt.initConfig({
 
 ```js
 var assets = require('postcss-assets');
-var result = assets.process('.icon { background: inline('icon.svg') }').css;
+var result = assets.process('.icon { background: inline("icon.svg") }').css;
 ```
 
 ```js
