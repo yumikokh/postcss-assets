@@ -6,6 +6,7 @@ var url = require('url');
 // Vendor imports
 var cssesc = require('cssesc');
 var mime = require('mime');
+var postcss = require('postcss');
 var sizeOf = require('image-size');
 var SVGEncoder = require('directory-encoder/lib/svg-uri-encoder.js');
 
@@ -267,12 +268,20 @@ Assets.prototype.postcss = function (css) {
   });
 };
 
+Assets.prototype.process = function (css, options) {
+  return postcss(this.postcss).process(css, options);
+};
+
 var assets = function (options) {
   return new Assets(options);
 };
 
 assets.postcss = function (css) {
   assets().postcss(css);
+};
+
+assets.process = function (css, options) {
+  return assets().process(css, options);
 };
 
 module.exports = assets;

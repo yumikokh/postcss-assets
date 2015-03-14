@@ -42,6 +42,12 @@ describe('plugin', function () {
     var expectedResult = readFixture('resolve.expected');
     expect(actualResult).to.equal(expectedResult);
   });
+
+  it('should be able to process input directly', function () {
+    var actualResult = plugin.process('body { background: resolve(\'test/fixtures/alpha/kateryna.jpg\'); }').css;
+    var expectedResult = 'body { background: url(\'/test/fixtures/alpha/kateryna.jpg\'); }';
+    expect(actualResult).to.equal(expectedResult);
+  });
 });
 
 describe('resolve', function () {
