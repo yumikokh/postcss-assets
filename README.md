@@ -1,34 +1,71 @@
 PostCSS Assets [![Build Status](https://travis-ci.org/borodean/postcss-assets.svg?branch=develop)](https://travis-ci.org/borodean/postcss-assets)
 ==============
 
-PostCSS Assets is an asset manager for CSS. It isolates stylesheets from environmental changes, gets image sizes and inlines files.
+PostCSS Assets is an asset manager for CSS which uses the [PostCSS postprocessor framework](https://github.com/postcss/postcss). It helps to manage assets, inline their contents and print image sizes directly inside stylesheets.
 
-Table of contents
------------------
+Functions
+---------
 
-* [Installation](#installation)
-* [Usage](#usage)
-* [URL resolution](#url-resolution)
-  * [Load paths](#load-paths)
-  * [Base path](#base-path)
-  * [Base URL](#base-url)
-  * [Relative paths](#relative-paths)
-* [Cachebuster](#cachebuster)
-* [Image dimensions](#image-dimensions)
-* [Inlining files](#inlining-files)
-* [Full list of options](#full-list-of-options)
+### `resolve(assetPath)`
+Generates a path to an asset.
+
+### `inline(assetPath)`
+Embeds the contents of an image directly inside your stylesheet, eliminating the need for another HTTP request. For small images, this can be a performance benefit at the cost of a larger generated CSS file.
+
+### `width(assetPath, [density])`
+Returns the width of the image found at the path supplied by $image relative to your project's images directory.
+
+### `height(assetPath, [density])`
+Returns the height of the image found at the path supplied by $image relative to your project's images directory.
+
+### `size(assetPath, [density])`
+Returns the size of the image found at the path supplied by $image relative to your project's images directory.
+
+Options
+-------
+
+Options are set by passing an options object to TODO. Available options are:
+
+### `basePath`
+The path to the root of the project.
+
+For example: `"source/"`.
+
+Defaults to the current working directory.
+
+### `baseUrl`
+URL of the project when running withing the web server.
+
+For example: `"/wp-content/themes/twentyfourteen"`, `"http://example.com"`.
+
+Defaults to `"/"`.
+
+### `cachebuster`
+If cache should be busted. Pass a function to define custom busting strategy.
+
+Defaults to `false`.
+
+### `loadPaths`
+Specific directories to look for the files.
+
+For example: `["assets/fonts", "assets/images"]`.
+
+Defaults to an empty array.
+
+### `relativeTo`
+Directory to relate to when resolving URLs. When `false`, disables relative URLs.
+
+For example: `"assets/css"`.
+
+Defaults to `false`.
+
+Path resolution
+---------------
 
 Installation
 ------------
 
-```bash
-npm install postcss-assets --save-dev
-```
-
-Usage
------
-
-### [Gulp PostCSS](https://github.com/w0rm/gulp-postcss)
+### Gulp
 
 ```js
 gulp.task('assets', function () {
@@ -36,14 +73,17 @@ gulp.task('assets', function () {
   var assets  = require('postcss-assets');
 
   return gulp.src('source/*.css')
-    .pipe(postcss([assets({
-      loadPaths: ['images/']
-    })]))
+    .pipe(postcss([
+      assets({
+        cachebuster: true,
+        loadPaths: ['assets/fonts', 'assets/images']
+      })
+    ]))
     .pipe(gulp.dest('build/'));
 });
 ```
 
-### [Grunt PostCSS](https://github.com/nDmitry/grunt-postcss)
+### Grunt
 
 ```js
 var assets  = require('postcss-assets');
@@ -53,7 +93,8 @@ grunt.initConfig({
     options: {
       processors: [
         assets({
-          loadPaths: ['images/']
+          cachebuster: true,
+          loadPaths: ['assets/fonts', 'assets/images']
         })
       ]
     },
@@ -62,165 +103,22 @@ grunt.initConfig({
 });
 ```
 
-URL resolution
---------------
-
-These options isolate stylesheets from environmental changes.
-
-### Load paths
-
-To make PostCSS Assets search for files in specific directories, define load paths:
+### JavaScript
 
 ```js
-var options = {
-  loadPaths: ['fonts/', 'media/patterns/', 'images/']
-};
+var assets = require('postcss-assets');
+var result = assets.process('.icon { background: inline('icon.svg') }').css;
 ```
-
-Example:
-
-```css
-body {
-  background: resolve('foobar.jpg');
-  background: resolve('icons/baz.png');
-}
-```
-
-PostCSS Assets would look for the files relative to the source file, then in load paths, then in the base path. If it succeed, it would resolve a true URL:
-
-```css
-body {
-  background: url('/media/patterns/foobar.jpg');
-  background: url('/images/icons/baz.png');
-}
-```
-
-### Base path
-
-If the root directory of your site is not where you execute PostCSS Assets, correct it:
 
 ```js
-var options = {
-  basePath: 'source/'
-};
+var assets = require('postcss-assets');
+var autoprefixer = require('autoprefixer-core');
+
+postcss()
+  .use(assets({
+    cachebuster: true,
+    loadPaths: ['assets/fonts', 'assets/images']
+  }))
+  .use(autoprefixer)
+  .process(css);
 ```
-
-PostCSS Assets would treat `source` directory as `/` for all URLs and load paths would be relative to it.
-
-### Base URL
-
-If the URL of your base path is not `/`, correct it:
-
-```js
-var options = {
-  baseUrl: 'http://example.com/wp-content/themes/'
-};
-```
-
-### Relative paths
-
-To make resolved paths relative, define a directory to relate to:
-
-```js
-var options = {
-  relativeTo: 'assets/css'
-};
-```
-
-Cachebuster
------------
-
-PostCSS Assets can bust assets cache, changing urls depending on asset’s modification date:
-
-```js
-var options = {
-  cachebuster: true
-};
-```
-
-```css
-body {
-  background: url('/images/icons/baz.png?14a931c501f');
-}
-```
-
-To define a custom cachebuster pass a function as an option:
-
-```js
-var options = {
-  cachebuster: function (filePath, urlPathname) {
-    return fs.statSync(filePath).mtime.getTime().toString(16);
-  }
-};
-```
-
-If the returned value is falsy, no cache busting is done for the asset.
-
-If the returned value is an object the values of `pathname` and/or `query` are used to generate a cache busted path to the asset.
-
-If the returned value is a string, it is added as a query string.
-
-The returned values for query strings must not include the starting `?`.
-
-Busting the cache via path:
-
-```js
-var options = {
-  cachebuster: function (filePath, urlPathname) {
-    var hash = fs.statSync(filePath).mtime.getTime().toString(16);
-    return {
-      pathname: path.dirname(urlPathname)
-        + '/' + path.basename(urlPathname, path.extname(urlPathname))
-        + hash + path.extname(urlPathname),
-      query: false // you may omit this one
-    }
-  }
-};
-```
-
-Image dimensions
-----------------
-
-PostCSS Assets calculates dimensions of PNG, JPEG, GIF, SVG and WebP images:
-
-```css
-body {
-  width: width('images/foobar.png'); /* 320px */
-  height: height('images/foobar.png'); /* 240px */
-  background-size: size('images/foobar.png'); /* 320px 240px */
-}
-```
-
-To correct the dimensions for images with a high density, pass it as a second parameter:
-
-```css
-body {
-  width: width('images/foobar.png', 2); /* 160px */
-  height: height('images/foobar.png', 2); /* 120px */
-  background-size: size('images/foobar.png', 2); /* 160px 120px */
-}
-```
-
-Inlining files
---------------
-
-PostCSS inlines files to a stylesheet in Base64 encoding:
-
-```css
-body {
-  background: inline('images/foobar.png');
-}
-```
-
-SVG files would be inlined unencoded, because [then they benefit in size](http://css-tricks.com/probably-dont-base64-svg/).
-
-Full list of options
---------------------
-
-| Option           | Description                                                                       | Default |
-|:-----------------|:----------------------------------------------------------------------------------|:--------|
-| `basePath`       | Root directory of the project.                                                    | `.`     |
-| `baseUrl`        | URL of the project when running the web server.                                   | `/`     |
-| `cachebuster`    | If cache should be busted. Pass a function to define custom busting strategy.     | `false` |
-| `loadPaths`      | Specific directories to look for the files.                                       | `[]`    |
-| `relativeTo`     | Directory to relate to when resolving URLs. When `false`, disables relative URLs. | `false` |
