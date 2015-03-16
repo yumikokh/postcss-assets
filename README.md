@@ -6,19 +6,19 @@ PostCSS Assets is an asset manager for CSS which uses the [PostCSS postprocessor
 Functions
 ---------
 
-### `resolve(assetPath)`
+### `resolve(asset-path)`
 Generates a path to an asset.
 
-### `inline(assetPath)`
+### `inline(asset-path)`
 Embeds the contents of an image directly inside your stylesheet, eliminating the need for another HTTP request. For small images, this can be a performance benefit at the cost of a larger generated CSS file.
 
-### `width(assetPath, [density])`
+### `width(asset-path, [density])`
 Returns the width of the image found at the path supplied by $image relative to your project's images directory.
 
-### `height(assetPath, [density])`
+### `height(asset-path, [density])`
 Returns the height of the image found at the path supplied by $image relative to your project's images directory.
 
-### `size(assetPath, [density])`
+### `size(asset-path, [density])`
 Returns the size of the image found at the path supplied by $image relative to your project's images directory.
 
 Options
