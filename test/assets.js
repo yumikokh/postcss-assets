@@ -64,6 +64,19 @@ test('busts cache when resolving urls', (t) =>
       t.is(result.css, "a { b: url('http://example.com/wp-content/themes/images/picture.png?3061') }");
     }));
 
+test('pushes a message when resolving urls', (t) =>
+  process("a { b: resolve('picture.png') }", {
+    basePath: 'fixtures',
+    baseUrl: 'http://example.com/wp-content/themes',
+    loadPaths: ['fonts', 'images'],
+  })
+    .then((result) => {
+      t.deepEqual(result.messages, [{
+        type: 'dependency',
+        file: path.resolve('fixtures/images/picture.png'),
+      }]);
+    }));
+
 test('throws when trying to resolve a non-existing file', (t) =>
   process("a { b: resolve('non-existing.gif') }")
     .then(t.fail, (err) => {
